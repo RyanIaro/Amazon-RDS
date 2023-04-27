@@ -1,15 +1,33 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: An RDS instance
 
-MyDB:
-  Type: AWS::RDS::DBInstance
-  Properties:
-    DBSecurityGroups:
-    - Ref: MyDbSecurityByEC2SecurityGroup
-    - Ref: MyDbSecurityByCIDRIPGroup
-    AllocatedStorage: '1'
-    DBInstanceClass: db.t2.small
-    Engine: PostgreSQL
-    MasterUsername: postgres
-    MasterUserPassword: ${{ secrets.POSTGRES_PASSWORD }}
-  DeletionPolicy: Snapshot
+Resources:
+  MyDB:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBName: 
+      AllocatedStorage: '5'
+      DBInstanceClass: db.t2.micro
+      Engine: postgres
+      MasterUsername: !Sub '{{resolve:ssm:/database/postgres/username}}'
+      MasterPassword: !Sub '{{resolve:ssm:/database/postgres/password}}'
+    DeletionPolicy: Retain
+
+  Outputs: 
+    DatabaseName: 
+      Value: !Ref Database
+
+    DatabaseURL: 
+      Value:
+        Fn::Join:
+          - ''
+          - - jdbc:postgresql://
+            - Fn::GetAtt:
+                - Database
+                - Endpoint.Address
+            - ':'
+            - Fn::GetAtt:
+                - Database
+                - Endpoint.Port
+            - '/'
+            - !Ref Database
